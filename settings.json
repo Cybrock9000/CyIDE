@@ -2,11 +2,11 @@
     "lang1": "python.json",
     "lang2": "cobra.json",
     "lang3": "json.json",
-    "lang4": "python.json",
+    "lang4": "text.json",
 
     "lastopenedfolder": "",
 
-    "pallet": 1,
+    "pallet": 0,
 
     "RESx": 1920,
     "RESy": 1080

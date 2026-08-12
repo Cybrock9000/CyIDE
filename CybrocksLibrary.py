@@ -5,6 +5,7 @@
 
 
 import pygame as pg
+import io
 
 class Button:
     def __init__(self, image_path, pos, scalew = 1.0, scaleh = 1.0):
@@ -47,7 +48,10 @@ class Button:
         
 class BetterImage:
     def __init__(self, image_path, pos, scalew = 1.0, scaleh = 1.0):
-        self.image = pg.image.load(image_path).convert_alpha()
+        if isinstance(image_path, (bytes, bytearray)):
+            self.image = pg.image.load(io.BytesIO(image_path)).convert_alpha()
+        else:
+            self.image = pg.image.load(image_path).convert_alpha()
         
         og_width = self.image.get_width()
         og_height = self.image.get_height()
@@ -65,7 +69,10 @@ class BetterImage:
         self.rect = self.image.get_rect(topleft = pos)
         
     def new_image(self,image_path,pos,scalew = 1.0,scaleh = 1.0):
-        self.image = pg.image.load(image_path).convert_alpha()
+        if isinstance(image_path, (bytes, bytearray)):
+            self.image = pg.image.load(io.BytesIO(image_path)).convert_alpha()
+        else:
+            self.image = pg.image.load(image_path).convert_alpha()
         
         og_width = self.image.get_width()
         og_height = self.image.get_height()

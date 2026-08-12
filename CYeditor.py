@@ -1,6 +1,4 @@
-
-#this is a code editor for the engine and I would eventually like to make it into my main
-
+# 2026 Cy
 
 import pygame as pg
 from pygame.locals import *
@@ -14,6 +12,7 @@ import json
 from pathlib import Path
 import subprocess
 import math as M
+from plugin_manager import pluginM
 
 
 def main(script=[],SfilePath='',projfolder=''):
@@ -54,6 +53,13 @@ def main(script=[],SfilePath='',projfolder=''):
     lookingatline = 1#len(code) + 1
     uppercase = False
     scrolly = 0
+    tab = False #opens that side menu, called it tab because its like a tab
+    shifting = False
+
+
+
+    pluginManager = pluginM()
+    pluginManager.init(data)
 
     # -------== colors ==--------------------------------------------------------------------------------------------------------------
 
@@ -72,6 +78,8 @@ def main(script=[],SfilePath='',projfolder=''):
     textHighlight = screensurf.get_at((4,p))
     text1 = screensurf.get_at((2,p))
     titleBar = screensurf.get_at((5,p))
+    tab1 = screensurf.get_at((15,p))
+    tab2 = screensurf.get_at((14,p))
 
     ftype = Path(SfilePath).suffix.lstrip(".")
 
@@ -124,6 +132,8 @@ def main(script=[],SfilePath='',projfolder=''):
     running = True
     while running:
 
+        pluginManager.update()
+
         # -------== key buttons ==--------------------------------------------------------------------------------------------------------------
         for event in pg.event.get():
             
@@ -164,7 +174,7 @@ def main(script=[],SfilePath='',projfolder=''):
                         uppercase = True
                 elif pg.key.name(event.key) == "f1": #(maybe) temporary save
                     save(code + [line],name,SfilePath)
-                elif pg.key.name(event.key) == "f2":
+                elif pg.key.name(event.key) == "f2": #load file and folder its in
                     loaded, specialwords, name = load(pallet,p,specialwords)
 
                     if loaded:
@@ -185,31 +195,13 @@ def main(script=[],SfilePath='',projfolder=''):
                         SfilePath = os.path.basename(name)
                         
                 elif pg.key.name(event.key) == "f3":
-                    root = tk.Tk()
-                    root.withdraw()
+                    pass
+                elif pg.key.name(event.key) == "f4": #run it
+                    save(code + [line], name, SfilePath)
 
-                    projfolder = filedialog.askdirectory(title="Select Project Folder")
+                    filename = os.path.basename(SfilePath)
 
-                    root.destroy()
-
-                    if projfolder:
-                        print("Project folder:", projfolder)
-
-                    #print(projfolder)
-
-                elif pg.key.name(event.key) == "f4":
-
-                    if projfolder:
-                        save(code + [line], name, SfilePath)
-
-                        filename = os.path.basename(SfilePath)
-
-                        subprocess.run(
-                            [sys.executable, filename],
-                            cwd=projfolder
-                        )
-                    else:
-                        print("No project folder selected. Press F3 first.")
+                    subprocess.run([sys.executable, filename],cwd=projfolder)
 
                 elif pg.key.name(event.key) == "f5":
                     specialwords = load_language(data["lang1"], pallet, p)
@@ -230,8 +222,10 @@ def main(script=[],SfilePath='',projfolder=''):
                     pass
                 elif pg.key.name(event.key) == "f12":
                     pass
-                
-                
+                elif pg.key.name(event.key) == "PAGE UP":
+                    pass
+                elif pg.key.name(event.key) == "PAGE DOWN":
+                    pass
                 elif event.key == pg.K_UP:
                     if lookingatline != 1:
                         lookingatline -= 1
@@ -241,7 +235,6 @@ def main(script=[],SfilePath='',projfolder=''):
                     if len(code) <= (lookingatline - 1):
                         code.insert(lookingatline-1,line)
                         line = ""
-                    
 
                 elif pg.key.name(event.key) == "numlock":
                     pass
@@ -249,15 +242,18 @@ def main(script=[],SfilePath='',projfolder=''):
                     #running = False
                     pass
                 elif pg.key.name(event.key) == "return": #enter
-                    code.insert(lookingatline-1,line)
-                    line = ""
-                    lookingatline += 1
+                    if shifting:
+                        code.insert(lookingatline-1,line)
+                        lookingatline += 1
+                    else:
+                        code.insert(lookingatline-1,line)
+                        line = ""
+                        lookingatline += 1
                 else:
                     if uppercase:
                         line += pg.key.name(event.key).upper()
                     else:
                         line += event.unicode
-                        
                 
                 #print(lookingatline)
                 #print(pg.key.name(event.key))
@@ -265,15 +261,25 @@ def main(script=[],SfilePath='',projfolder=''):
 
         keys = pg.key.get_pressed()
         #print(keys)
+        if keys[pg.K_F3]:
+            tab = True
+        else:
+            tab = False
+
+        if keys[pg.K_LSHIFT]:
+            shifting = True
+        else:
+            shifting = False
+
         if keys[pg.K_PAGEDOWN]:
-            if keys[pg.K_LSHIFT]:
+            if shifting:
                 lookingatline += 2
                 scrolly += 2
             else:
                 lookingatline += 1
                 scrolly += 1
         if keys[pg.K_PAGEUP]:
-            if keys[pg.K_LSHIFT]:
+            if shifting:
                 if lookingatline >=1:
                     lookingatline -= 2
                 else:
@@ -288,6 +294,8 @@ def main(script=[],SfilePath='',projfolder=''):
                 if scrolly != 0:
                     scrolly -= 1
 
+            if lookingatline <=0:
+                lookingatline = 1
         # -------== buttons ==--------------------------------------------------------------------------------------------------------------
         if closeB.is_pressed():
             running = False
@@ -331,12 +339,19 @@ def main(script=[],SfilePath='',projfolder=''):
         drawcolorwords(window, font, str(lookingatline), 10, data["RESy"]-40)
         drawcolorwords(window, font, line2, 50, data["RESy"]-40)
 
+        if tab:
+            pg.draw.rect(window, margin, [data['RESx']/2, 30, data['RESx']/2, data['RESy']-90])
+            pg.draw.rect(window, text1, [data['RESx']/2, 30, data['RESx']/2, data['RESy']-90],5)
+            title = font.render(f'Plugins loaded: {len(pluginManager.pluginsloaded)}',False,tab1)
+            window.blit(title,((data['RESx']/2)+10,40))
+
         title = font.render(f'Cy IDE {version}                      {name}',False,(255,255,255))
         window.blit(title,(5,5))
         
         closeB.draw(window)  
         minB.draw(window)
 
+        pluginManager.draw(window)
 
         clock.tick(30)
         pg.display.flip()
