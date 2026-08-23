@@ -28,8 +28,8 @@ def main(script=[],SfilePath='',projfolder=''):
     os.environ['SDL_VIDEO_CENTERED'] = '1'
 
     clock = pg.time.Clock()
-    
-    window = pg.display.set_mode((data["RESx"],data["RESy"]), pg.NOFRAME)
+    window = pg.display.set_mode((0,0),pg.FULLSCREEN, pg.NOFRAME)
+    #window = pg.display.set_mode((data["RESx"],data["RESy"]), pg.NOFRAME)
     sdl_window = Window.from_display_module()
     
     font = pg.font.Font('IDEresources/fonts/MapleMono-NF-Regular.ttf', 15)
@@ -40,8 +40,9 @@ def main(script=[],SfilePath='',projfolder=''):
     name = ''
 
     projfolder = projfolder
+    filename = os.path.basename(SfilePath)
 
-    version = 'B1.0:8/11/2026'
+    version = 'B1.0:8/12/2026'
 
     '''loaded_lines = load().splitlines()
 
@@ -53,6 +54,7 @@ def main(script=[],SfilePath='',projfolder=''):
     lookingatline = 1#len(code) + 1
     uppercase = False
     scrolly = 0
+    scrollx = 0
     tab = False #opens that side menu, called it tab because its like a tab
     shifting = False
 
@@ -80,6 +82,7 @@ def main(script=[],SfilePath='',projfolder=''):
     titleBar = screensurf.get_at((5,p))
     tab1 = screensurf.get_at((15,p))
     tab2 = screensurf.get_at((14,p))
+    tab3 = screensurf.get_at((7,p))
 
     ftype = Path(SfilePath).suffix.lstrip(".")
 
@@ -91,7 +94,8 @@ def main(script=[],SfilePath='',projfolder=''):
     elif ftype == 'jspn':
         specialwords = load_language("json.json", pallet, p)
     else:
-        specialwords = load_language("python.json", pallet, p)
+        specialwords = load_language("text.json", pallet, p)
+        
 
     
     def drawcolorwords(surface, font, text, x, y):
@@ -132,7 +136,6 @@ def main(script=[],SfilePath='',projfolder=''):
     running = True
     while running:
 
-        pluginManager.update()
 
         # -------== key buttons ==--------------------------------------------------------------------------------------------------------------
         for event in pg.event.get():
@@ -204,16 +207,21 @@ def main(script=[],SfilePath='',projfolder=''):
                     subprocess.run([sys.executable, filename],cwd=projfolder)
 
                 elif pg.key.name(event.key) == "f5":
-                    specialwords = load_language(data["lang1"], pallet, p)
+                    #specialwords = load_language(data["lang1"], pallet, p)
+                    pass
 
                 elif pg.key.name(event.key) == "f6":
-                    specialwords = load_language(data["lang2"], pallet, p)
+                    #specialwords = load_language(data["lang2"], pallet, p)
+                    pass
 
                 elif pg.key.name(event.key) == "f7":
-                    specialwords = load_language(data["lang3"], pallet, p)
+                    #specialwords = load_language(data["lang3"], pallet, p)
+                    pass
                             
                 elif pg.key.name(event.key) == "f8":
-                    specialwords = load_language(data["lang4"], pallet, p)
+                    #specialwords = load_language(data["lang4"], pallet, p)
+                    pass
+                
                 elif pg.key.name(event.key) == "f9":
                     pass
                 elif pg.key.name(event.key) == "f10":
@@ -238,9 +246,11 @@ def main(script=[],SfilePath='',projfolder=''):
 
                 elif pg.key.name(event.key) == "numlock":
                     pass
-                elif pg.key.name(event.key) == "escape": #quit
-                    #running = False
-                    pass
+                elif pg.key.name(event.key) == "escape": # was quit
+                    save(code + [line],name,SfilePath)
+                    settings(window,p,font,script=[],SfilePath='',projfolder='')
+                    running = False
+                    #pass
                 elif pg.key.name(event.key) == "return": #enter
                     if shifting:
                         code.insert(lookingatline-1,line)
@@ -271,13 +281,22 @@ def main(script=[],SfilePath='',projfolder=''):
         else:
             shifting = False
 
+        if keys[pg.K_LCTRL]:
+            control = True
+        else:
+            control = False
+
         if keys[pg.K_PAGEDOWN]:
             if shifting:
                 lookingatline += 2
                 scrolly += 2
+            elif control:
+                if scrollx <= -10:
+                    scrollx += 10
             else:
                 lookingatline += 1
                 scrolly += 1
+
         if keys[pg.K_PAGEUP]:
             if shifting:
                 if lookingatline >=1:
@@ -288,6 +307,8 @@ def main(script=[],SfilePath='',projfolder=''):
                     scrolly -= 2
                 else:
                     scrolly=0
+            elif control:
+                scrollx -= 10
             else:
                 if lookingatline !=1:
                     lookingatline -= 1
@@ -296,6 +317,13 @@ def main(script=[],SfilePath='',projfolder=''):
 
             if lookingatline <=0:
                 lookingatline = 1
+
+        pluginManager.update(idedata=(scrolly,scrollx,len(code),keys,clock.get_fps(),font,(tab,tab1,tab2,tab3,margin,text1),data))
+
+        #print(scrollx)
+
+
+        
         # -------== buttons ==--------------------------------------------------------------------------------------------------------------
         if closeB.is_pressed():
             running = False
@@ -306,29 +334,28 @@ def main(script=[],SfilePath='',projfolder=''):
 
 
 
+
         # -------== drawing ==--------------------------------------------------------------------------------------------------------------
         window.fill(bg)
-        pg.draw.rect(window, margin, [0, 30, 45, 2000])
         
         current_y = 35 + ((lookingatline - 1) * 25) - (scrolly * 25)
         pg.draw.rect(window,textHighlight,(45, current_y, 2000, 25))
-              
 
-        y = 35
+        y = 35   
+        for i in range(M.floor((data["RESy"]-90)/25)):
+            code_index = i + scrolly
+        
+            if code_index < len(code):
+                drawcolorwords(window,font,code[code_index],50+scrollx,y)
+        
+            y += 25
+
+        pg.draw.rect(window, margin, [0, 30, 45, 2000])
 
         for i in range(M.floor((data["RESy"]-90)/25)):
             numbers = sideFont.render(str(1 + i + scrolly),False,text1)
             window.blit(numbers, (5, i * 25 + 40))
 
-            code_index = i + scrolly
-
-            if code_index < len(code):
-                drawcolorwords(window,font,code[code_index],50,y)
-
-            y += 25
-
-
-        
             
         line2 = str(line) + '<|' #cursor -------------------------------------------------------
         drawcolorwords(window, font, line2, 50, (lookingatline*25+12)-(scrolly*25))
@@ -339,11 +366,68 @@ def main(script=[],SfilePath='',projfolder=''):
         drawcolorwords(window, font, str(lookingatline), 10, data["RESy"]-40)
         drawcolorwords(window, font, line2, 50, data["RESy"]-40)
 
+        pluginManager.draw(window)
+
         if tab:
-            pg.draw.rect(window, margin, [data['RESx']/2, 30, data['RESx']/2, data['RESy']-90])
-            pg.draw.rect(window, text1, [data['RESx']/2, 30, data['RESx']/2, data['RESy']-90],5)
-            title = font.render(f'Plugins loaded: {len(pluginManager.pluginsloaded)}',False,tab1)
-            window.blit(title,((data['RESx']/2)+10,40))
+            filename = os.path.basename(SfilePath)
+            pg.draw.rect(window, margin, [data['RESx']-(data['RESx']/4), 30, data['RESx']/4, data['RESy']-90])
+            pg.draw.rect(window, text1, [data['RESx']-(data['RESx']/4), 30, data['RESx']/4, data['RESy']-90],5)
+            pg.draw.rect(window, text1, [data['RESx']-(data['RESx']/4), data['RESy']/4, data['RESx']/4, 5])
+            ploaded = font.render(f'Plugins loaded: {len(pluginManager.pluginsloaded)}',False,tab1)
+            window.blit(ploaded,((data['RESx']-(data['RESx']/4))+10,40))
+
+            sy = 70
+            if pluginManager.pluginsloaded:
+                for plugin in pluginManager.pluginsloaded:
+                        pluginT = font.render(f'{plugin}',False,tab2)
+                        window.blit(pluginT,((data['RESx']-(data['RESx']/4))+10,sy))
+                        sy += 20
+            else:
+                pluginT = font.render(f'None',False,tab2)
+                window.blit(pluginT,((data['RESx']-(data['RESx']/4))+10,sy))
+                sy += 20
+
+            ftype = Path(SfilePath).suffix.lstrip(".")
+
+            filenameT = font.render(f'Filename: {filename}',False,tab1)
+            window.blit(filenameT,((data['RESx']-(data['RESx']/4))+10,(data['RESy']/4)+10))
+
+            if ftype == 'py':
+                filetypeT = font.render(f'Filetype: Python',False,tab1)
+                window.blit(filetypeT,((data['RESx']-(data['RESx']/4))+10,(data['RESy']/4)+30))
+            elif ftype == 'cobra':
+                filetypeT = font.render(f'Filetype: Cobra',False,tab1)
+                window.blit(filetypeT,((data['RESx']-(data['RESx']/4))+10,(data['RESy']/4)+30))
+            elif ftype == 'txt':
+                filetypeT = font.render(f'Filetype: Text',False,tab1)
+                window.blit(filetypeT,((data['RESx']-(data['RESx']/4))+10,(data['RESy']/4)+30))
+            else:
+                filetypeT = font.render(f'Filetype: {ftype}',False,tab1)
+                window.blit(filetypeT,((data['RESx']-(data['RESx']/4))+10,(data['RESy']/4)+30))
+
+            linesT = font.render(f'Lines: {len(code)}',False,tab1)
+            window.blit(linesT,((data['RESx']-(data['RESx']/4))+10,(data['RESy']/4)+50))
+            filesTT = font.render(f'Files in dir:',False,tab1)
+            window.blit(filesTT,((data['RESx']-(data['RESx']/4))+10,(data['RESy']/4)+70))
+
+            sy = 90
+            if projfolder:
+                for file in os.listdir(projfolder):
+                    if file == filename:
+                        filesT = font.render(f'{file}',False,tab3)
+                        window.blit(filesT,((data['RESx']-(data['RESx']/4))+10,(data['RESy']/4)+sy))
+                        sy += 20
+                    else:
+                        filesT = font.render(f'{file}',False,tab2)
+                        window.blit(filesT,((data['RESx']-(data['RESx']/4))+10,(data['RESy']/4)+sy))
+                        sy += 20
+            else:
+                filesT = font.render(f'None',False,tab2)
+                window.blit(filesT,((data['RESx']-(data['RESx']/4))+10,(data['RESy']/4)+sy))
+
+
+            pluginManager.drawpanel(window)
+
 
         title = font.render(f'Cy IDE {version}                      {name}',False,(255,255,255))
         window.blit(title,(5,5))
@@ -351,7 +435,7 @@ def main(script=[],SfilePath='',projfolder=''):
         closeB.draw(window)  
         minB.draw(window)
 
-        pluginManager.draw(window)
+        pluginManager.drawoverlay(window)
 
         clock.tick(30)
         pg.display.flip()
@@ -379,9 +463,10 @@ def save(code,name,SfilePath=''):
         submitButton.grid(row=2, column=0, columnspan=2)
 
         root.mainloop()
-    with open(name, "w") as f:
-        for line in code:
-            f.write(line + "\n")
+    if name != '':
+        with open(name, "w") as f:
+            for line in code:
+                f.write(line + "\n")
     return name
 
 
@@ -426,11 +511,6 @@ def load_language(filename, screensurf, p):
         return specialwords
 
 
-if __name__ == "__main__":
-    
-    main()
-
-
 def Sload(path):
     
     with open(path, "r") as f:
@@ -443,4 +523,95 @@ def run(script):
     main(S,SfilePath)
 
 
+
+def settings(window,p,font,script=[],SfilePath='',projfolder=''):
+
+    with open('settings.json') as f:
+        data = json.load(f)
+
+    title = font.render(f'CyIDE Settings',False,(255,255,255))
+
+    updelay = False
+    downdelay = False
+
+    clock = pg.time.Clock()
+
+    pallet = BetterImage((os.getcwd() + "/IDEresources/textures/p.png"),(data['RESx']/2,20),20,20)
+    pointer = BetterImage((os.getcwd() + "/IDEresources/textures/pointer.png"),(data['RESx']/2-32,p*20+20),1,1)
+
+    up = Button((os.getcwd() + "/IDEresources/textures/up.png"),(data['RESx']/2-64,20),2,2)
+    down = Button((os.getcwd() + "/IDEresources/textures/down.png"),(data['RESx']/2-64,45),2,2)
+    '''up = Button((os.getcwd() + "/IDEresources/textures/up.png"),(data['RESx']/2-64,20),2,2)
+    down = Button((os.getcwd() + "/IDEresources/textures/down.png"),(data['RESx']/2-64,45),2,2)'''
+
+    sts = Button((os.getcwd() + "/IDEresources/textures/sts.png"),(0,80),2,2)
+
+    running = True
+    while running:
+
+
+        for event in pg.event.get():
+            if event.type == pg.KEYDOWN:
+                if pg.key.name(event.key) == "escape": # quit
+                    subprocess.Popen([sys.executable, "CYeditor.py"]) # <<<<<<<<<<<< CHANGE THIS TO EXE WHEN COMPILED <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+                    running = False
+
+
+        if up.is_pressed() and updelay == False:
+            data['pallet'] = data['pallet'] - 1
+            p -= 1
+
+            with open('settings.json', "w") as f:
+                json.dump(data, f)
+            updelay = True
+                    
+        elif up.is_pressed() and updelay == True:
+            pass
+        else: 
+            updelay = False
+
+
+        if down.is_pressed() and downdelay == False:
+            data['pallet'] = data['pallet'] + 1
+            p += 1
+            with open('settings.json', "w") as f:
+                json.dump(data, f)
+            downdelay = True
+                            
+        elif down.is_pressed() and downdelay == True:
+            pass
+        else: 
+            downdelay = False
+
+        xrest = font.render(f'X Resolution: {data['RESx']}',False,(255,255,255))
+        yrest = font.render(f'Y Resolution: {data['RESy']}',False,(255,255,255))
+
+
+        window.fill((0,0,0))
+        window.blit(title,(0,0))
+        window.blit(xrest,(0,100))
+        window.blit(yrest,(0,120))
+        pallet.draw(window)
+
+        pointer.move((data['RESx']/2-32,p*20+20))
+        pointer.draw(window)
+
+        up.draw(window)
+        down.draw(window)
+        #sts.draw(window)
+
+        clock.tick(30)
+        pg.display.flip()
+
+
+
+
+
+if __name__ == "__main__":
+    
+    main()
+
+
+
 pg.quit()
+sys.exit()

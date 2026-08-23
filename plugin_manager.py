@@ -20,13 +20,22 @@ class pluginM:
     def init(self,data):
         for plugin in self.pluginsloaded:
             plugin.init(data)
-    def update(self):
+
+    def update(self,idedata):
         for plugin in self.pluginsloaded:
-            plugin.update()
+            plugin.update(idedata)
 
     def draw(self,window):
         for plugin in self.pluginsloaded:
             plugin.draw(window)
+
+    def drawpanel(self,window):
+        for plugin in self.pluginsloaded:
+            plugin.drawpanel(window)
+
+    def drawoverlay(self,window):
+        for plugin in self.pluginsloaded:
+            plugin.drawoverlay(window)
 
 
     def add_plugin(self, plugin):
