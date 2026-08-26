@@ -15,6 +15,11 @@ Page Up/Down + Ctrl = Scroll right/left
 Escape = Settings (will restart the IDE but will save your progress)
 
 
+## How to run:
+
+Download latest release and extract the zip
+Run Cyeditor.exe
+
 ## Plugins:
 
 Look at example.py or any other plugin to see how to create plugins
